@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#111111">
+    <title>S</title>
+    <link rel="preload" href="jumpscare-mobile.png" as="image">
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        body {
+            background: #000000;
+            color: white;
+            font-family: Arial, sans-serif;
+            height: 100dvh;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        #start {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+        }
+
+        h1 {
+            font-size: clamp(26px, 6vw, 36px);
+            margin-bottom: 8px;
+        }
+
+        p {
+            color: #999;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .warning {
+            font-size: 12px;
+            color: #aaa;
+            max-width: 300px;
+        }
+
+        button {
+            background: #fff;
+            color: #111;
+            border: 0;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            touch-action: manipulation;
+        }
+
+        #play {
+            margin-top: 12px;
+            min-width: 140px;
+        }
+
+        #game {
+            display: none;
+            position: fixed;
+            inset: 0;
+        }
+
+        #score {
+            text-align: center;
+            padding: 20px;
+            padding-top: calc(20px + env(safe-area-inset-top));
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        #arena {
+            position: absolute;
+            top: calc(75px + env(safe-area-inset-top));
+            bottom: calc(80px + env(safe-area-inset-bottom));
+            left: calc(12px + env(safe-area-inset-left));
+            right: calc(12px + env(safe-area-inset-right));
+        }
+
+        #target {
+            position: absolute;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: #4ade80;
+            cursor: pointer;
+            touch-action: manipulation;
+            padding: 0;
+        }
+
+        #scare {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        #scare img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        #scare.full {
+            background: #000;
+        }
+
+        #scare.full img {
+            animation: scareZoom 0.2s ease-out forwards;
+        }
+
+        #scare.right img {
+            width: 65%;
+            height: 100%;
+            right: 0;
+            object-fit: contain;
+            animation: fromRight 0.9s ease-in-out forwards;
+        }
+
+        #scare.left img {
+            width: 65%;
+            height: 100%;
+            left: 0;
+            object-fit: contain;
+            animation: fromLeft 0.9s ease-in-out forwards;
+        }
+
+        /* Ortadan çıkan jumpscare */
+
+        #scare.final {
+            background: #000;
+        }
+
+        #scare.final img {
+            animation: finalZoom 0.35s ease-out forwards;
+        }
+
+        @keyframes scareZoom {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes fromRight {
+            0% {
+                transform: translateX(110%);
+            }
+
+            15%, 75% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(110%);
+            }
+        }
+
+        @keyframes fromLeft {
+            0% {
+                transform: translateX(-110%);
+            }
+
+            15%, 75% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-110%);
+            }
+        }
+
+        @keyframes finalZoom {
+            0% {
+                transform: scale(0.7);
+            }
+
+            100% {
+                transform: scale(1.25);
+            }
+        }
+
+        #stop {
+            position: fixed;
+            bottom: calc(15px + env(safe-area-inset-bottom));
+            right: calc(15px + env(safe-area-inset-right));
+            z-index: 10000;
+            padding: 10px 16px;
+            min-height: 44px;
+            font-size: 12px;
+            background: #252525;
+            color: #ccc;
+            display: none;
+        }
+
+        @media (max-width: 768px), (pointer: coarse) {
+            #target { width: 56px; height: 56px; }
+            #score { font-size: 18px; }
+            #scare img, #scare.full img, #scare.final img,
+            #scare.right img, #scare.left img {
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                object-position: center;
+            }
+            #scare.full img, #scare.final img {
+                animation: mobileAppear .2s ease-out forwards;
+            }
+        }
+        @keyframes mobileAppear {
+            from { transform: scale(.85); }
+            to { transform: scale(1); }
+        }
+
+        @media (min-width: 769px) and (pointer: fine) {
+            #scare img,
+            #scare.full img, #scare.final img,
+            #scare.right img, #scare.left img {
+                inset: 0;
+                margin: auto;
+                width: 90%;
+                height: 82%;
+                object-fit: contain;
+                object-position: center;
+            }
+            #scare.full img, #scare.final img {
+                animation: mobileAppear .2s ease-out forwards;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #scare img { animation: none !important; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="start">
+
+        <h1>Refleks Testi</h1>
+
+        <p>Yeşil daireye olabildiğince hızlı tıkla!</p>
+
+        <button id="play">Başla</button>
+
+    </div>
+
+    <div id="game">
+
+        <div id="score">Skor: 0</div>
+
+        <div id="arena">
+            <button id="target" aria-label="Yeşil hedef"></button>
+        </div>
+
+    </div>
+
+    <div id="scare">
+        <img src="jumpscare-mobile.png" alt="">
+    </div>
+
+    <audio id="sound"
+           src="scare.mp3"
+           preload="auto">
+    </audio>
+
+    <script>
+        const start = document.getElementById("start");
+        const game = document.getElementById("game");
+        const arena = document.getElementById("arena");
+        const target = document.getElementById("target");
+        const scare = document.getElementById("scare");
+        const sound = document.getElementById("sound");
+        const stop = document.getElementById("stop");
+        const play = document.getElementById("play");
+        const scoreText = document.getElementById("score");
+
+        let score = 0;
+        let running = false;
+        let scaring = false;
+        let firstScare = true;
+        let lastType = "";
+
+        let clicksSinceScare = 0;
+        let nextScareAt = 2;
+
+        let gameTimer = null;
+        let scareTimer = null;
+        let audioTimer = null;
+
+        let session = 0;
+        let audioVersion = 0;
+
+        const scareTypes = [
+            {
+                type: "full",
+                duration: 2000
+            },
+            {
+                type: "right",
+                duration: 900
+            },
+            {
+                type: "left",
+                duration: 900
+            },
+            {
+                type: "final",
+                duration: 1500
+            }
+        ];
+
+        function random(min, max) {
+            return min + Math.random() * (max - min);
+        }
+
+        function moveTarget() {
+
+            const maxX = Math.max(
+                0,
+                arena.clientWidth - target.offsetWidth
+            );
+
+            const maxY = Math.max(
+                0,
+                arena.clientHeight - target.offsetHeight
+            );
+
+            const x = random(0, maxX);
+            const y = random(0, maxY);
+
+            target.style.left = x + "px";
+            target.style.top = y + "px";
+        }
+
+        target.addEventListener("click", () => {
+
+            if (!running || scaring) return;
+
+            score++;
+
+            scoreText.textContent = "Skor: " + score;
+
+            moveTarget();
+
+            if (gameTimer !== null) return;
+
+            clicksSinceScare++;
+
+            if (clicksSinceScare >= nextScareAt) {
+
+                clicksSinceScare = 0;
+
+                nextScareAt = Math.floor(random(2, 3));
+
+                scheduleScare();
+            }
+        });
+
+        function stopSound() {
+
+            audioVersion++;
+
+            clearTimeout(audioTimer);
+            audioTimer = null;
+
+            sound.pause();
+        }
+
+        function playSound(startTime, duration) {
+
+            stopSound();
+
+            if (!Number.isFinite(sound.duration)) return;
+
+            if (startTime >= sound.duration) return;
+
+            duration = Math.min(
+                duration,
+                sound.duration - startTime
+            );
+
+            sound.currentTime = startTime;
+            sound.volume = 0.35;
+
+            const currentSession = session;
+            const currentAudio = audioVersion;
+
+            sound.play().then(() => {
+
+                if (
+                    !running ||
+                    !scaring ||
+                    currentSession !== session ||
+                    currentAudio !== audioVersion
+                ) {
+                    return;
+                }
+
+                audioTimer = setTimeout(() => {
+                    sound.pause();
+                }, duration * 1000);
+
+            }).catch(console.log);
+        }
+
+        function randomSound(duration) {
+
+            if (!Number.isFinite(sound.duration)) return;
+
+            const max = Math.max(
+                0,
+                sound.duration - duration
+            );
+
+            playSound(random(0, max), duration);
+        }
+
+        function showScare(type, duration, first = false) {
+
+            if (!running || scaring) return;
+
+            scaring = true;
+
+            scare.className = "";
+            scare.style.display = "none";
+
+            void scare.offsetWidth;
+
+            scare.className = type;
+            scare.style.display = "block";
+
+            if (first) {
+
+                playSound(14, 2);
+
+            } else {
+
+                randomSound(duration / 1000);
+
+            }
+
+            lastType = type;
+
+            scareTimer = setTimeout(() => {
+
+                scareTimer = null;
+
+                scare.style.display = "none";
+
+                stopSound();
+
+                scaring = false;
+
+                if (running) {
+                    moveTarget();
+                }
+
+            }, duration);
+        }
+
+        function scheduleScare() {
+
+            if (
+                !running ||
+                scaring ||
+                gameTimer !== null
+            ) return;
+
+            const delay = random(100, 350);
+
+            gameTimer = setTimeout(() => {
+
+                gameTimer = null;
+
+                if (!running) return;
+
+                if (firstScare) {
+
+                    firstScare = false;
+
+                    showScare("full", 2000, true);
+
+                    return;
+                }
+
+                const available = scareTypes.filter(
+                    item => item.type !== lastType
+                );
+
+                const selected = available[
+                    Math.floor(
+                        Math.random() * available.length
+                    )
+                ];
+
+                showScare(
+                    selected.type,
+                    selected.duration
+                );
+
+            }, delay);
+        }
+
+        /* Oyunu durdur */
+
+        function finishGame() {
+
+            running = false;
+            scaring = false;
+
+            session++;
+
+            clearTimeout(gameTimer);
+            clearTimeout(scareTimer);
+
+            gameTimer = null;
+            scareTimer = null;
+
+            stopSound();
+
+            scare.style.display = "none";
+            game.style.display = "none";
+            stop.style.display = "none";
+            start.style.display = "flex";
+
+            play.disabled = false;
+
+            score = 0;
+            firstScare = true;
+            lastType = "";
+
+            clicksSinceScare = 0;
+            nextScareAt = 2;
+
+            scoreText.textContent = "Skor: 0";
+        }
+
+        play.addEventListener("click", async () => {
+
+            if (running) return;
+
+            running = true;
+            play.disabled = true;
+
+            const currentSession = ++session;
+
+            sound.muted = true;
+
+            try {
+
+                await sound.play();
+
+                if (currentSession !== session) return;
+
+                sound.pause();
+                sound.currentTime = 0;
+
+            } catch (error) {
+
+                console.log("Ses izni:", error);
+
+            }
+
+            if (
+                !running ||
+                currentSession !== session
+            ) {
+                return;
+            }
+
+            sound.muted = false;
+            sound.volume = 0.35;
+
+            start.style.display = "none";
+            game.style.display = "block";
+            stop.style.display = "block";
+
+            moveTarget();
+        });
+
+        window.addEventListener("resize", () => {
+
+            if (running) {
+                moveTarget();
+            }
+        });
+
+        stop.addEventListener("click", finishGame);
+
+        document.addEventListener("keydown", event => {
+
+            if (event.key === "Escape" && running) {
+                finishGame();
+            }
+        });
+
+        document.addEventListener("visibilitychange", () => {
+
+            if (document.hidden && running) {
+                finishGame();
+            }
+        });
+    </script>
+
+</body>
+</html>
